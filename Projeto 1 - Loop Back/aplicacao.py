@@ -22,14 +22,14 @@ import numpy as np
 #use uma das 3 opcoes para atribuir à variável a porta usada
 #serialName = "/dev/ttyACM0"           # Ubuntu (variacao de)
 #serialName = "/dev/tty.usbmodem1411" # Mac    (variacao de)
-serialName = "COM6"                  # Windows(variacao de)
+serialName = "COM7"                  # Windows(variacao de)
 
 
 def main():
     try:
         #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
         #para declarar esse objeto é o nome da porta.
-        com1 = enlace('COM6')
+        com1 = enlace('COM7')
         
     
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
@@ -39,13 +39,15 @@ def main():
         print("Comunicação aberta com sucesso! Vamos ao resto do projeto!")
         print("----------------------------------------------------------")
 
-
+        imageR = "./img/wpp.png"
+        imageW = "./img/CopiaDevolvida.png"
         
         #aqui você deverá gerar os dados a serem transmitidos. 
         #seus dados a serem transmitidos são uma lista de bytes a serem transmitidos. Gere esta lista com o 
         #nome de txBuffer. Esta sempre irá armazenar os dados a serem enviados.
         print("Agora será carregada a imagem em um formato de bytes.")
-        with open("corinthians.png", "rb") as image: 
+        with open(imageR, "rb") as image: 
+            print(" - {}".format(imageR))
             txBuffer = image.read()  #https://stackoverflow.com/questions/22351254/python-script-to-convert-image-into-byte-array
 
             #tinha criado uma lista pra append os bytes, mas deu erro
@@ -70,11 +72,11 @@ def main():
   
         #txBuffer = #dados
         com1.sendData(np.asarray(txBuffer))
-       
+        #time.sleep(1.5)
         # A camada enlace possui uma camada inferior, TX possui um método para conhecermos o status da transmissão
         # Tente entender como esse método funciona e o que ele retorna
         txSize = com1.tx.getStatus()
-        print(f"Como o txSize retornou o valor {txSize}, vemos que o status da transmissão está ok.")     
+        print(f"Como o txSize retornou o valor {txSize}, vemos que não deu tempo de transmissão, pois ainda não há nada dentro do buffer..")     
         #Agora vamos iniciar a recepção dos dados. Se algo chegou ao RX, deve estar automaticamente guardado
         #Observe o que faz a rotina dentro do thread RX
         #print um aviso de que a recepção vai começar.
@@ -85,10 +87,19 @@ def main():
       
         #acesso aos bytes recebidos
         txLen = len(txBuffer)
+        start = time.time()
         rxBuffer, nRx = com1.getData(txLen)
+        end = time.time()
         print("recebeu {}" .format(rxBuffer))
+        print(f'Tempo de transmissão: {end-start} segundos.')
+
             
-    
+        print("Salvando dados no arquivo novo")
+        print("- {}".format(imageW))
+        f = open(imageW,'wb')
+        f.write(rxBuffer)
+        f.close()
+
         # Encerra comunicação
         print("-------------------------")
         print("Comunicação encerrada")
