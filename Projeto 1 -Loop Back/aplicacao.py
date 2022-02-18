@@ -35,34 +35,50 @@ def main():
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
         #Se chegamos até aqui, a comunicação foi aberta com sucesso. Faça um print para informar.
+        print("----------------------------------------------------------")
+        print("Comunicação aberta com sucesso! Vamos ao resto do projeto!")
+        print("----------------------------------------------------------")
+
+
         
         #aqui você deverá gerar os dados a serem transmitidos. 
         #seus dados a serem transmitidos são uma lista de bytes a serem transmitidos. Gere esta lista com o 
-        #nome de txBuffer. Esla sempre irá armazenar os dados a serem enviados.
+        #nome de txBuffer. Esta sempre irá armazenar os dados a serem enviados.
+        print("Agora será carregada a imagem em um formato de bytes.")
+        with open("corinthians.png", "rb") as image: 
+            txBuffer = image.read()  #https://stackoverflow.com/questions/22351254/python-script-to-convert-image-into-byte-array
+
+            #tinha criado uma lista pra append os bytes, mas deu erro
+        #print(txBuffer)
+
         
         #txBuffer = imagem em bytes!
     
 
     
         #faça aqui uma conferência do tamanho do seu txBuffer, ou seja, quantos bytes serão enviados.
-       
+        print(f"Bytes enviados: {len(txBuffer)}")       
             
         #finalmente vamos transmitir os tados. Para isso usamos a funçao sendData que é um método da camada enlace.
         #faça um print para avisar que a transmissão vai começar.
+        if len(txBuffer) >= 1:
+            print("Imagem carregada com sucesso! Vamos a transmissão.")
         #tente entender como o método send funciona!
         #Cuidado! Apenas trasmitimos arrays de bytes! Nao listas!
           
           
   
-        txBuffer = #dados
+        #txBuffer = #dados
         com1.sendData(np.asarray(txBuffer))
        
         # A camada enlace possui uma camada inferior, TX possui um método para conhecermos o status da transmissão
         # Tente entender como esse método funciona e o que ele retorna
         txSize = com1.tx.getStatus()
+        print(f"Como o txSize retornou o valor {txSize}, vemos que o status da transmissão está ok.")     
         #Agora vamos iniciar a recepção dos dados. Se algo chegou ao RX, deve estar automaticamente guardado
         #Observe o que faz a rotina dentro do thread RX
         #print um aviso de que a recepção vai começar.
+        print("Transmissão completa! O próximo passo é configurar a recepção de dados para o RX.")
         
         #Será que todos os bytes enviados estão realmente guardadas? Será que conseguimos verificar?
         #Veja o que faz a funcao do enlaceRX  getBufferLen
