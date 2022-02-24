@@ -6,58 +6,61 @@
 ####################################################
 
 
-#esta é a camada superior, de aplicação do seu software de comunicação serial UART.
-#para acompanhar a execução e identificar erros, construa prints ao longo do código! 
-
-
 from enlace import *
 import time
 import numpy as np
+import random
 
-# voce deverá descomentar e configurar a porta com através da qual ira fazer comunicaçao
-#   para saber a sua porta, execute no terminal :
-#   python -m serial.tools.list_ports
-# se estiver usando windows, o gerenciador de dispositivos informa a porta
+serialName = "COM5"                  # Windows(variacao de)
 
-#use uma das 3 opcoes para atribuir à variável a porta usada
-#serialName = "/dev/ttyACM0"           # Ubuntu (variacao de)
-#serialName = "/dev/tty.usbmodem1411" # Mac    (variacao de)
-serialName = "COM7"                  # Windows(variacao de)
+def comandos():
+    com1 = enlace('COM5')
+    dic_comandos = {b'\x00\xff\x00\xff': 4, b'\x00\xff\xff\x00':4, b'\xff':1, b'\x00':1, b'\xff\x00': 2, b'\x00\xff':2 }
+    comando1 = b'\x00\xff\x00\xff'
+    comando2 = b'\x00\xff\xff\x00'
+    comando3 = b'\xff'
+    comando4 = b'\x00'
+    comando5 = b'\xff\x00'
+    comando6 = b'\x00\xff'
 
+    lista_comandos = [comando1,comando2,comando3,comando4,comando5,comando6]
+    dic_seleciondos = {}
+    lista_selecionada = []
+    lista_bytes=[]
+    i = 0
+    numero_comandos = int(input("Escreva um numero entre 10 e 30: "))
+    if numero_comandos < 10:
+        print('NUMERO PASSADO DEVE SER NO MINIMO 10')
+        com1.disable()
+    while i < numero_comandos:
+        random_add = random.choice(list(dic_comandos.keys()))
+        dic_seleciondos.append(random_add)
+        lista_selecionada.append(random_add)
+        lista_bytes.append(bin(dic_comandos[random_add]))
+        dic_seleciondos[random_add] = bin(dic_comandos[random_add])
+        i += dic_comandos[random_add]
+        
+    print(f'tamanho da lista de comandos: {len(lista_selecionada)}')
+    print(f'tamanho da lista de bytes: {len(lista_bytes)}')
+    print (dic_seleciondos)
+    
+    return lista_selecionada,lista_bytes
 
 def main():
     try:
-        #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
-        #para declarar esse objeto é o nome da porta.
-        com1 = enlace('COM7')
+        com1 = enlace('COM5')
         
-    
-        # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
-        #Se chegamos até aqui, a comunicação foi aberta com sucesso. Faça um print para informar.
+  
         print("----------------------------------------------------------")
         print("Comunicação aberta com sucesso! Vamos ao resto do projeto!")
         print("----------------------------------------------------------")
 
-        imageR = "./img/wpp.png"
-        imageW = "./img/CopiaDevolvida.png"
-        
-        #aqui você deverá gerar os dados a serem transmitidos. 
-        #seus dados a serem transmitidos são uma lista de bytes a serem transmitidos. Gere esta lista com o 
-        #nome de txBuffer. Esta sempre irá armazenar os dados a serem enviados.
+        txBuffer = comandos()
+        print("Serao enviadas 2 listas: uma com os bytes, o outro com o comando")
+
         print("Agora será carregada a imagem em um formato de bytes.")
-        with open(imageR, "rb") as image: 
-            print(" - {}".format(imageR))
-            txBuffer = image.read()  #https://stackoverflow.com/questions/22351254/python-script-to-convert-image-into-byte-array
-
-            #tinha criado uma lista pra append os bytes, mas deu erro
-        #print(txBuffer)
-
         
-        #txBuffer = imagem em bytes!
-    
-
-    
         #faça aqui uma conferência do tamanho do seu txBuffer, ou seja, quantos bytes serão enviados.
         print(f"Bytes enviados: {len(txBuffer)}")       
             
