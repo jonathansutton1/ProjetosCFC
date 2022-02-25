@@ -6,15 +6,16 @@
 ####################################################
 
 
+from operator import concat
 from enlace import *
 import time
 import numpy as np
 import random
 
-serialName = "COM5"                  # Windows(variacao de)
+serialName = "COM7"                  # Windows(variacao de)
 
 def comandos():
-    com1 = enlace('COM5')
+    com1 = enlace('COM7')
     dic_comandos = {b'\x00\xff\x00\xff': 4, b'\x00\xff\xff\x00':4, b'\xff':1, b'\x00':1, b'\xff\x00': 2, b'\x00\xff':2 }
     comando1 = b'\x00\xff\x00\xff'
     comando2 = b'\x00\xff\xff\x00'
@@ -24,31 +25,47 @@ def comandos():
     comando6 = b'\x00\xff'
 
     lista_comandos = [comando1,comando2,comando3,comando4,comando5,comando6]
-    dic_seleciondos = {}
     lista_selecionada = []
     lista_bytes=[]
+    lista_enviada = []
     i = 0
     numero_comandos = int(input("Escreva um numero entre 10 e 30: "))
-    if numero_comandos < 10:
-        print('NUMERO PASSADO DEVE SER NO MINIMO 10')
+    if numero_comandos < 10 or numero_comandos>30 :
+        print('NUMERO PASSADO DEVE SER NO MINIMO 10 OU MAXIMO 30\nTENTE NOVAMENTE')
         com1.disable()
     while i < numero_comandos:
         random_add = random.choice(list(dic_comandos.keys()))
-        dic_seleciondos.append(random_add)
         lista_selecionada.append(random_add)
         lista_bytes.append(bin(dic_comandos[random_add]))
-        dic_seleciondos[random_add] = bin(dic_comandos[random_add])
-        i += dic_comandos[random_add]
-        
+        i += 1
+
+
+    k = 0 
+    while k <(len(lista_selecionada)):
+        lista_enviada.append(lista_selecionada[k])
+        lista_enviada.append(lista_bytes[k])
+        k+=1
+
+
+
+
     print(f'tamanho da lista de comandos: {len(lista_selecionada)}')
     print(f'tamanho da lista de bytes: {len(lista_bytes)}')
-    print (dic_seleciondos)
-    
-    return lista_selecionada,lista_bytes
+    print(len(lista_enviada))
+    print(lista_selecionada)
+    print(lista_bytes)
+    print(lista_enviada)
+    t=0
+    soma =0
+    while t<len(lista_bytes):
+        soma += int(lista_bytes[t],2)
+        t+=1
+    print (soma)
+    return lista_enviada
 
 def main():
     try:
-        com1 = enlace('COM5')
+        com1 = enlace('COM7')
         
         com1.enable()
   
@@ -62,12 +79,12 @@ def main():
         print("Agora será carregada a imagem em um formato de bytes.")
         
         #faça aqui uma conferência do tamanho do seu txBuffer, ou seja, quantos bytes serão enviados.
-        print(f"Bytes enviados: {len(txBuffer)}")       
+        print(f"Comandos enviados: {len(txBuffer)}")       
             
         #finalmente vamos transmitir os tados. Para isso usamos a funçao sendData que é um método da camada enlace.
         #faça um print para avisar que a transmissão vai começar.
         if len(txBuffer) >= 1:
-            print("Imagem carregada com sucesso! Vamos a transmissão.")
+            print("Lista carregada com sucesso! Vamos a transmissão.")
         #tente entender como o método send funciona!
         #Cuidado! Apenas trasmitimos arrays de bytes! Nao listas!
           
