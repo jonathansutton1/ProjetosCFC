@@ -50,13 +50,13 @@ def main():
         print(int.from_bytes(rxBuffer, byteorder='big'))
         x=0
         com = []
-        while x < (int.from_bytes(rxBuffer, byteorder='big')):
+        while x <= int.from_bytes(rxBuffer, byteorder='big'):
             tam, nRx = com1.getData(1)
             coman, nRx = com1.getData(int.from_bytes(tam, byteorder='big'))
-            print(coman)
-            com.append(coman) 
+            com.append(coman)
+            
             x+=1
-        print(com)
+        print(coma)
             
         # Encerra comunicação
         print("-------------------------")
