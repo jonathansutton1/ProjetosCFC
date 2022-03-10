@@ -14,38 +14,30 @@ import random
 
 serialName = "COM5"                  # Windows(variacao de)
 soma =0
-def comando():
-    com1 = enlace(serialName)
-    dic_comandos = {b'\x00\xff\x00\xff': 4, b'\x00\xff\xff\x00':4, b'\xff':1, b'\x00':1, b'\xff\x00': 2, b'\x00\xff':2 }
- 
-    lista_selecionada = []
-    lista_bytes=[]
-    i = 0
-    numero_comandos = int(input("Escreva um numero entre 10 e 30: "))
-    if numero_comandos < 10 or numero_comandos>30 :
-        print('NUMERO PASSADO DEVE SER NO MINIMO 10 OU MAXIMO 30\nTENTE NOVAMENTE')
-        com1.disable()
-    while i < numero_comandos:
-        random_add = random.choice(list(dic_comandos.keys()))
-        lista_selecionada.append(random_add)
-        lista_bytes += ((dic_comandos[random_add]).to_bytes(1, byteorder='big'))
-        i += 1
-    print(lista_selecionada)
-    print(lista_bytes)
-    print(len(lista_selecionada))
-    
+img = "./pic.jpg"
+pri = {'HS': b'\x00', 'msg': b'\x01'}
+tipo = {'png':b'\x00','txt': b'\x01', 'jpg': b'\x02'}
 
-    print(f'tamanho da lista de comandos: {len(lista_selecionada)}')
-    print(f'tamanho da lista de bytes: {len(lista_bytes)}')
-    
-    t=0
-    global soma 
-    while t<len(lista_bytes):
-        soma += lista_bytes[t]
-        t+=1
-    soma = soma + numero_comandos
-    print (soma)
-    return lista_selecionada, lista_bytes
+def head(str,str1,tamanho,num_pacotes):
+    resp1 = pri[str]
+    resp2 = tipo[str1]
+    #global img
+    #pri = {b'\x00': 'HS', b'\x01': 'msg'}
+    #tipo = {b'\x00': 'png', b'\x01': 'txt', b'\x02': 'jpg'}
+    #tamanho = len(img).to_bytes(3, byteorder='big')
+    #num_pacotes = len(img)//114
+    lista_head = [resp1,resp2,tamanho,num_pacotes, b'\x00\x00\x00\x00']
+    return lista_head
+
+with open(img, "rb") as image: 
+    txBuffer = image.read()  #https://stackoverflow.com/questions/22351254/python-script-to-convert-image-into-byte-array
+
+
+eap = b'\x00\x00\x00\x00'
+
+def pacote(lista_head, payload, eap):
+    return [lista_head + payload + eap]
+
 
 def main():
     try:
@@ -61,14 +53,15 @@ def main():
         print("Transmissão aberta com sucesso! Vamos ao resto do projeto!")
         print("----------------------------------------------------------")
 
-        comandos, tamanhos = comando()
-        print("Serao enviadas 2 listas: uma com os bytes, o outro com o comando")
-        
-        print(f"Quantidade de comandos enviados: {len(comandos)}")       
+        comandos = head('HS','jpg', (len(txBuffer)).to_bytes(3, byteorder='big'), ((len(txBuffer)//114)+1).to_bytes(1, byteorder='big'))
+        print(comandos)
+
+        print("Será enviado o primeiro pacote.")        
+        print(f"Quantidade de bytes enviados: {len(comandos)}")       
             
  
         if len(comandos) >= 1:
-            print("Lista carregada com sucesso! Vamos a transmissão.")
+            print("Imagem carregada com sucesso! Vamos a transmissão.")
 
         print(np.asarray(soma.to_bytes(1,byteorder= 'big')))
         start = time.time()
