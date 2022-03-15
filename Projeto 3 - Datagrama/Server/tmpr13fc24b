@@ -32,38 +32,36 @@ def main():
       
         
         #acesso aos bytes recebidos
-        while True:
-            pack, nRx = com1.getData(1)
-            com1.rx.clearBuffer()
-            com1.sendData(pack)
-            time.sleep(0.05)
-            conf, nRx = com1.getData(1)
-            if conf[0] ==2:
-                print('confirmacao completa')
-                break
+        head, nRx = com1.getData(10)
+        print(head[8])
         
+        tp = head[1]
+        
+        pay, nRx = com1.getData(tp)
+        print(pay)
+        
+        eop, nRX = com1.getData(4)
+        
+        pakage = head+pay+eop
+        
+        print(pakage)
+        
+        com1.sendData(pakage)
+        print('Enviou')
+
         x =0
-        img=[]
-        pack, nRx = com1.getData(1)
-        com1.rx.clearBuffer()
-        print(pack)
-        
-        while len(img)<=pack[2]:
-            
-            pack_H, nRx = com1.getData(1)
-            print(pack_H[1], pack_H[3])
-            if pack_H.endswith(b'\xFF\xFF\xFF\xFF'):
-                com1.rx.clearBuffer()
-                img.append(pack_H)
-                com1.sendData(np.asarray(pack_H))
-                time.sleep(0.05)
-            #print(pack_H)
-            #print(pack_H[1],pack_H[3])
-            #TP = head[1]
-            #pack_P, nRx = com1.getData(TP)
-            #print(pack_P)
-            
-        print(len(img))
+        while x < head[6]:
+            pack_H, nRx = com1.getData(10)
+            TP = head[1]
+            pack_P, nRx = com1.getData(TP)
+            pack_E, nRx = com1.getData(4)
+
+            img = img + pack_P
+
+            time.sleep(5)
+
+
+            x+=1
         
         # Encerra comunicação
         print("-------------------------")

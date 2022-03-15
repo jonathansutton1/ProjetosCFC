@@ -15,7 +15,7 @@ import random
 serialName = "COM8"                  # Windows(variacao de)
 soma =0
 img = "./pic.jpg"
-pri = {'HS': (b'\x00'), 'msg': b'\x01', 'certo':b'\x02'}
+pri = {'HS': (b'\x00'), 'msg': b'\x01'}
 
 def head(str,payload,num_pacotes, pacote):
     resp1 = pri[str]
@@ -64,19 +64,13 @@ def main():
 
         while True:
             com1.sendData(np.asarray(HS))
-            time.sleep(0.05)
             conf, nRX = com1.getData(1)
             if conf != HS:
                 print('ERRO')
                 r = input('Quer tentar novamnete? [y/n]')
                 if r != 'y':
-                    com1.disable()
                     break
             else:
-                head_HS = head('certo', payload, (n_pac).to_bytes(1, byteorder='big') , b'\x00')
-                HS = head_HS + payload + eop
-                com1.sendData(np.asarray(HS))
-                time.sleep(0.05)
                 print('certo')
                 break
                
@@ -84,39 +78,26 @@ def main():
             
         print('Comecando a Enviar a IMG')
         modo = 'msg'
+        payload=txBuffer[0:114]
         print(len(payload))
         pacote=1
-        
         com1.rx.clearBuffer()
-        
         head_HS = head(modo, payload, (n_pac).to_bytes(1, byteorder='big') , b'\x00')
         HS = head_HS + payload + eop
-        print(HS)
         com1.sendData(np.asarray(HS))
-        time.sleep(0.05)
-        print('oi')
-        
-        
-        
-        
-        pacote = 1
         while pacote <= (len(txBuffer)//114)+1:
-            
             while True:
                 confi, nRX = com1.getData(1)
                 if confi.endswith(b'\xFF\xFF\xFF\xFF'):
                     com1.rx.clearBuffer()
                     break
-                
             if confi[0] == 1:
                 tp=(len(payload)).to_bytes(1, byteorder='big')
                 h = head(modo, tp, (n_pac).to_bytes(1, byteorder='big') , (pacote).to_bytes(1, byteorder='big'))
-                print(h[2])
+                print(h)
                 payload = txBuffer[((pacote-1)*114):(114*(pacote))]
-                if h[3] == h[2]-1:
-                    payload = txBuffer[((pacote-1)*114):]
                 MSG = h + payload + eop
-                print(MSG[1],MSG[3])
+                print(MSG)
                 com1.sendData(np.asarray(MSG))
                 time.sleep(0.05)
                 pacote+=1
