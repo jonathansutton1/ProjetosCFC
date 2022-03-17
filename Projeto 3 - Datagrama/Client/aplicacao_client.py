@@ -85,7 +85,6 @@ def main():
         print('Comecando a Enviar a IMG')
         modo = 'msg'
         print(len(payload))
-        pacote=1
         
         com1.rx.clearBuffer()
         
@@ -113,8 +112,11 @@ def main():
                 h = head(modo, tp, (n_pac).to_bytes(1, byteorder='big') , (pacote).to_bytes(1, byteorder='big'))
                 print(h[2])
                 payload = txBuffer[((pacote-1)*114):(114*(pacote))]
-                if h[3] == h[2]-1:
+                if h[3] == h[2]:
                     payload = txBuffer[((pacote-1)*114):]
+                    tp=(len(payload)).to_bytes(1, byteorder='big')
+                    h = head(modo, tp, (n_pac).to_bytes(1, byteorder='big') , (pacote).to_bytes(1, byteorder='big'))
+                print(len(payload))
                 MSG = h + payload + eop
                 print(MSG[1],MSG[3])
                 com1.sendData(np.asarray(MSG))

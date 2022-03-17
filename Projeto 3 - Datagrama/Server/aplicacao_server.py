@@ -43,27 +43,33 @@ def main():
                 break
         
         x =0
-        img=[]
         pack, nRx = com1.getData(1)
         com1.rx.clearBuffer()
         print(pack)
-        
-        while len(img)<=pack[2]:
+        i=1
+        img= b'\x00'
+        while i-1<=pack[2]:
             
             pack_H, nRx = com1.getData(1)
             print(pack_H[1], pack_H[3])
             if pack_H.endswith(b'\xFF\xFF\xFF\xFF'):
                 com1.rx.clearBuffer()
-                img.append(pack_H)
+                img += (pack_H[10:pack_H[1]+10])
                 com1.sendData(np.asarray(pack_H))
                 time.sleep(0.05)
+                i+=1
             #print(pack_H)
             #print(pack_H[1],pack_H[3])
             #TP = head[1]
             #pack_P, nRx = com1.getData(TP)
             #print(pack_P)
-            
-        print(len(img))
+        img_c = img[1:]
+        print(img_c)
+        x = './img_devolv.jpg'
+        f = open(x,'wb')
+        f.write(img_c)
+        f.close()
+        
         
         # Encerra comunicação
         print("-------------------------")
