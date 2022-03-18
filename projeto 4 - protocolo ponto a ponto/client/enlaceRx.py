@@ -68,9 +68,12 @@ class RX(object):
         return(b)
 
     def getNData(self, size):
+        start = int(time.time()) 
+        
         while(self.getBufferLen() < size):
-            #print("esperando {}" .format(size))
-            #print("tem  {}" .format(self.getBufferLen()))
+            final = int(time.time())
+            if final >= start + 5:
+                return ((255).to_bytes(1, byteorder='big'))
             time.sleep(0.05)                 
         return(self.getBuffer(size))
 
