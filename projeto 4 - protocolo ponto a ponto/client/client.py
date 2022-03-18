@@ -58,6 +58,7 @@ def cria_head(tipo,n_atual,n_total,n_bytespay):
 def atualiza_head (pacote, cont):
     pacote[7]=(cont).to_bytes(1, byteorder='big')
     return pacote
+
 def cria_lista(binario):
     lista=[]
     for bit in binario:

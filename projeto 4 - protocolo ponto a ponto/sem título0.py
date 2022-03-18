@@ -65,13 +65,43 @@ def atualiza (pack, contador):
     pack[7]= contador_bytes
     return pack
 
-def lista_bytes(bin):
+
+
+def pacote(img):
     lista=[]
+    for i in img:
+        byte = (i).to_bytes(1, byteorder='big')
+        lista.append(byte)
+        
+    payload = [0]*114
+    n_pacotes = calcula_tam(img)
     
+    lista_pack = [0]*tam_payload
+    
+    for i in range(len(lista_pack)+1):
+        
+        if i == 0:
+            head = head(1, 0, n_pacotes, 0)
+            tam_payload = list()
+        elif i != n_pacotes:
+            head = head(3, i, n_pacotes, payload)
+            for i in range(len(payload)):
+                payload[i]=lista.pop(0)
+        else:
+            resto = img[(n_pacotes-1)*114:]
+            head = head(3, i, n_pacotes, resto)
+            payload = [0]*len(resto)
+            for i in range(len(bytes_rest)):
+                payload[i]=lista.pop(0)
+            
+            
+            
+    
+        pack = head + payload + eop
+        lista_pack[i]= pack
+        
+    return lista_pack
 
-
-
-def pacote()    
 
 
 
