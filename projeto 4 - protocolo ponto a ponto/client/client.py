@@ -25,211 +25,229 @@ import random
 #serialName = "/dev/tty.usbmodem1411" # Mac    (variacao de)
 serialName = "COM3"                  # Windows(variacao de)
 
-eop1=b'\xaa'
-eop2=b'\xff'
-eop=[eop2,eop1,eop2,eop1]
+img = "./img/simbolo.png"
 
-def calcula_quant(tamanho):
-    if tamanho%114==0:
-        return tamanho//114
+eop= b'\xff\xff\xff\xff'
+
+def calcula_tam(img):
+    if len(img)%114==0:
+        return len(img)//114
     else:
-        return tamanho//114 + 1
+        return len(img)//114 + 1
 
-def cria_head(tipo,n_atual,n_total,n_bytespay):
-    id_servidor=0
+def head(tipo, num_pacotes, pacote_at, payload):
     head=[0]*10
-    head[0]=(tipo).to_bytes(1, byteorder='big')
-    head[1]=(0).to_bytes(1, byteorder='big')#id sensor
-    head[2]=(id_servidor).to_bytes(1, byteorder='big')#id servidor
-    head[3]=(n_total).to_bytes(1, byteorder='big')
-    head[4]=(n_atual).to_bytes(1, byteorder='big')
-    if tipo==1:
-        #id arquivo em handshake
-        head[5]=(0).to_bytes(1, byteorder='big')
-    else:
-        #tamanho do payload
-        head[5]=(n_bytespay).to_bytes(1, byteorder='big')
-    head[6]=(0).to_bytes(1, byteorder='big')
-    head[7]=(0).to_bytes(1, byteorder='big')
-    head[8]=(170).to_bytes(1, byteorder='big')
-    head[9]=(170).to_bytes(1, byteorder='big')
-    return head
-
-def atualiza_head (pacote, cont):
-    pacote[7]=(cont).to_bytes(1, byteorder='big')
-    return pacote
-
-def cria_lista(binario):
-    lista=[]
-    for bit in binario:
-        lista.append((bit).to_bytes(1, byteorder='big'))
-    return lista
-
-def cria_datagrama(arquivo):
-    #Retorna uma lista de datagramas (cada elemento é uma lista de bygtes com head, payload e eop) a partir de um arquivo
-    bytes=cria_lista(arquivo)
-    payload=114
-  
-    quant_pay=calcula_quant(len(arquivo))
-    lista_datagramas=[0]*(quant_pay+1)
-    i=0
-    for i in range(quant_pay+1):
-
-        if i==0:
-            head=cria_head(1,0,quant_pay,0)
-            bytes_pay=[]
-        elif i!=quant_pay:
-            #Se não é o último pacote
-            head=cria_head(3,i,quant_pay,payload)
-            bytes_pay=[0]*payload
-            for quant in range(payload):
-                bytes_pay[quant]=bytes.pop(0)
-        
-        else:
-            #Se é o último pacote
-            head=cria_head(3,i,quant_pay,len(arquivo)%payload)
-            bytes_resto=(len(arquivo))%payload
-            bytes_pay=[0]*bytes_resto
-            for quant in range(bytes_resto):
-                bytes_pay[quant]=bytes.pop(0)
-
-        
-        
-        data=head+bytes_pay+eop
-        lista_datagramas[i]=data
-        i+=1
-    return lista_datagramas
-
-
-def cria_log(formato,head):
     
-    tipo=str(int.from_bytes(head[0], byteorder='big'))
-    tamanho_total=str(int.from_bytes(head[5], byteorder='big')+14)
-    linha=time.ctime()+" / "+formato+" / "+tipo+" / "+tamanho_total
-    if tipo == '3':
-        crc=(hex(int.from_bytes(head[8], byteorder='big'))[2:]+hex(int.from_bytes(head[9], byteorder='big'))[2:]).upper()
-        linha+=" / "+str(int.from_bytes(head[4], byteorder='big'))+" / "+str(int.from_bytes(head[3], byteorder='big'))+" / "+crc
-    return linha
+    tipo_bytes = (tipo).to_bytes(1,byteorder='big')
+    num_pacotes_bytes = (num_pacotes).to_bytes(1,byteorder='big')
+    pacote_atual_bytes = (pacote_at).to_bytes(1,byteorder='big')
+    tam_payload_bytes = (len(payload)).to_bytes(1,byteorder='big')
+    id_s = b'\x00'
+    
+    
+    head[0]= tipo_bytes
+    head[1]= id_s
+    head[2]=b'\x00'
+    head[3]=num_pacotes_bytes
+    head[4]=pacote_atual_bytes
+    if tipo == 1:
+        head[5]= b'\x00'
+    else:
+        head[5]= tam_payload_bytes
+    head[6]= b'\x00'
+    head[7]= b'\x00'
+    head[8]= b'\x00'
+    head[9]= b'\x00'
 
-def log_envio(head):
-    with open("C:/Users/thpro/Desktop/Camada Física/projetosCamada/p4Protocolo/client/log.txt", "a") as file:
-        file.write(cria_log("envio",head))
-        file.write('\n')
-def log_recebeu(head):
-    with open("C:/Users/thpro/Desktop/Camada Física/projetosCamada/p4Protocolo/client/log.txt", "a") as file:
-        file.write(cria_log("receb",head))
-        file.write('\n')
-def cria_lista(binario):
+
+def atualiza (pack, contador):
+    contador_bytes = (contador).to_bytes(1,byteorder='big')
+    pack[7]= contador_bytes
+    return pack
+
+
+
+def pacote(img):
     lista=[]
-    for bit in binario:
-        lista.append((bit).to_bytes(1, byteorder='big'))
-    return lista
+    for i in img:
+        byte = (i).to_bytes(1, byteorder='big')
+        lista.append(byte)
+        
+    payload = [0]*114
+    n_pacotes = calcula_tam(img)
+    
+    lista_pack = [0]*tam_payload
+    
+    for i in range(len(lista_pack)+1):
+        
+        if i == 0:
+            head1 = head(1, 0, n_pacotes, 0)
+            tam_payload = list()
+        elif i != n_pacotes:
+            head1 = head(3, i, n_pacotes, payload)
+            for i in range(len(payload)):
+                payload[i]=lista.pop(0)
+        else:
+            resto = img[(n_pacotes-1)*114:]
+            head1 = head(3, i, n_pacotes, resto)
+            payload = [0]*len(resto)
+            for i in range(len(payload)):
+                payload[i]=lista.pop(0)
+            
+            
+            
+    
+        pack = head1 + payload + eop
+        lista_pack[i]= pack
+        
+    return lista_pack
+
+    
+
 def main():
     try:
         #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
         #para declarar esse objeto é o nome da porta.
-        com1 = enlace('COM4')
+        com1 = enlace('COM4')        
+        
+        with open(img, "rb") as image:
+            txBuffer = image.read()
 
-    
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
-        with open("C:/Users/thpro/Desktop/Camada Física/projetosCamada/p4Protocolo/client/log.txt", "w") as file:
+        with open("./log.txt", "w") as file:
             file.write("Comunicação aberta")
             file.write('\n')
         print ('Comunicação aberta')
+        
+        
+        pack = pacote(txBuffer)
+        num_pacotes = pack[0][3]
+        inicia = False
+        termina = False
+        tempo_S = time.time()
 
-        txBuffer=(255).to_bytes(114*9+10, byteorder='big')
-        datagramas=cria_datagrama(txBuffer)
-        numPck=int.from_bytes(datagramas[0][3], byteorder='big')
-        inicia=False
-        encerrar=False
-        startTimer2 = int(time.time())
-        while not inicia:
-            #envia mensagem t1
-            print("Iniciando Handshake")
-            txBuffer=datagramas[0]
-
+        while inicia:
+            print('hand shake')
+            hS = pack[0]
+            print(hs)
+            
             com1.sendData(np.asarray(txBuffer))
-            log_envio(txBuffer)
-            print(txBuffer)
-
-
             time.sleep(5)
-            rxBuffer,nRx=com1.getData(14)
-            if rxBuffer[0]==2:
-            #se recebeu ok:
-                log_recebeu(cria_lista(rxBuffer))
-                print("Cliente recebeu mensagem de confirmação.")
-                inicia=True
-                cont=1
+            
+            rx, nRx=com1.getData(10)
+            time.sleep(0.05)
+            eop, nRx = com1.getData(4)
+            if rx[0]==2:
+                cont = 1
+                inicia = True
             else:
-                print("Cliente não recebeu a confirmação.")
-                time_now = int(time.time())
-                if time_now >= startTimer2 + 20:
-                    msgTipo5=cria_head(5,0,numPck,0)
-                    msgTipo5=msgTipo5+eop
-                    com1.sendData(np.asarray(msgTipo5))
-                    log_envio(msgTipo5)
-                    encerrar=True
-            if encerrar==True:
+                print("ERRO")
+                tempo_F = time.time()
+                if Tempo_F - 20 >= tempo_S:
+                    print('time out')
+                    cinco = head(5,0,0,0)
+                    cinco = cinco + eop
+                    com1.sendData(np.asarray(cinco))
+                    termina=True
+            if termina==True:
                 break
-        if encerrar==False:
-            while cont<=numPck:
-                #envia pckg cont (mensagem t3)
-                print("Enviando pacote {}.".format(cont))
-                txBuffer=datagramas[cont]
+        if encerrar==False:                
+                
+            while cont <= num_pacotes:
+                
+                txBuffer = pack[cont]
                 print(txBuffer)
 
                 com1.sendData(np.asarray(txBuffer))
-                log_envio(txBuffer)
+                tempo_F = time.time()
+            
+                rx , nRx = com1.getData(10)
+                
+                
+                if rx[0] == 4:
+                    cont +=1
+                else:
+                    if Tempo_F -5 >= tempo_S:
+                        
+                    
+            
 
-                startTimer2 = int(time.time())
 
-                recebeuConf=False
-                while not recebeuConf:
-                    if not encerrar:
-                        rxBuffer,nRx=com1.getData(14)
-                        if rxBuffer[0]==4:
-                            log_recebeu(cria_lista(rxBuffer))
-                            #se recebeu mensagem t4 (confirmação do server):
-                            print("Recebeu confirmação do servidor.")
-                            if cont < numPck:
-                                datagramas[cont+1]=atualiza_head(datagramas[cont+1],cont)
-                            cont+=1
-                            recebeuConf=True
-                        else:
-                            #estourou timer 1
-                            if rxBuffer==(255).to_bytes(1, byteorder='big'):
-                                #reenviar pckg cont (mensagem t3)
-                                #reset Timer1
-                                print("Timer 1 estourado. Reenviando pacote {}.".format(cont))
-                                txBuffer=datagramas[cont]
-                                com1.sendData(np.asarray(txBuffer))
-                                log_envio(txBuffer)
 
-                            time_now = int(time.time())
-                            if time_now >= startTimer2 + 20:
-                                print("Timer 2 encerrado. Timeout de envio do arquivo, finalizando a comunicação.")
-                                msgTipo5=cria_head(5,cont,numPck,0)
-                                msgTipo5=msgTipo5+eop
-                                com1.sendData(np.asarray(msgTipo5))
-                                log_envio(msgTipo5)
-                                encerrar=True
-                            else:
-                                rxBuffer,nRx=com1.getData(14)
-                                if rxBuffer[0]==6:
-                                    log_recebeu(cria_lista(rxBuffer))
-                                    print("Erro no número do pacote.")
-                                    #corrigir cont
-                                    cont=rxBuffer[6]
-                                    txBuffer=datagramas[cont]
-                                    com1.sendData(np.asarray(txBuffer))
-                                    log_envio(txBuffer)
-                                    startTimer2 = int(time.time())
-                    else:
-                        break
-                if encerrar==True:
-                    break
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
