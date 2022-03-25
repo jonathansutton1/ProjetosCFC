@@ -26,6 +26,7 @@ import random
 serialName = "COM3"                  # Windows(variacao de)
 
 img = "./img/simbolo.png"
+log = './log/log.txt'
 
 eop= b'\xff\xff\xff\xff'
 
@@ -58,6 +59,7 @@ def head(tipo, num_pacotes, pacote_at, payload):
     head[7]= b'\x00'
     head[8]= b'\x00'
     head[9]= b'\x00'
+    return head
 
 
 def atualiza (pack, contador):
@@ -102,7 +104,22 @@ def pacote(img):
         
     return lista_pack
 
-    
+dic_tipo = {'um':'env', 'dois':'rec'}
+def log(num, head):
+    type = dic_tipo[num]
+    current_time = time.ctime()
+    tipo = str(int.from_bytes(head[0], byteorder='big'))
+    tamanho =str(int.from_bytes(head[5], byteorder='big')+14)
+    log = f'{current_time} / {type} / {tipo} / {tamanho}'
+
+    if tipo == '3':
+        pacote_enviado = str(int.from_bytes(head[4],byteorder='big'))
+        num_pacotes = str(int.from_bytes(head[3],byteorder='big'))
+        log = f"{current_time} / {type} / {tipo} / {tamanho} / {pacote_enviado} / {num_pacotes} / CRC"
+
+    with open(log, "a") as file:
+            file.write(log)
+            file.write('\n')
 
 def main():
     try:
@@ -129,10 +146,11 @@ def main():
 
         while inicia:
             print('hand shake')
-            hS = pack[0]
+            hs = pack[0]
             print(hs)
             
             com1.sendData(np.asarray(txBuffer))
+
             time.sleep(5)
             
             rx, nRx=com1.getData(10)

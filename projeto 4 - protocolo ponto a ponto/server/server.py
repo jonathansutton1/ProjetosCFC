@@ -27,7 +27,7 @@ serialName = "COM3"                  # Windows(variacao de)
 eop= b'\xff\xff\xff\xff'
 
 
-def head(tipo, num_pacotes, pacote_at, payload):
+def head_(tipo, num_pacotes, pacote_at, payload):
     head=[0]*10
     
     tipo_bytes = (tipo).to_bytes(1,byteorder='big')
@@ -50,6 +50,8 @@ def head(tipo, num_pacotes, pacote_at, payload):
     head[7]= b'\x00'
     head[8]= b'\x00'
     head[9]= b'\x00'
+    
+    return head
 
 
 
@@ -70,7 +72,7 @@ def main():
         acabar = False
         
         tempo_S = time.time()
-        
+        pay0 = []
         while oci:
             rx, nRX = com1.getData(10)
             time.sleep(0.05)
@@ -84,7 +86,7 @@ def main():
                     num_pacotes = rx[3]
                     cont = 1
                     ult_succeso=0
-                    head2= head(2,num_pacotes, cont, 0)
+                    head2= head_(2,num_pacotes, cont, pay0)
         
                     pack2=head2+eop
                     print(pack2)
@@ -94,9 +96,9 @@ def main():
             else:
                 Tempo_F = time.time()
                 if Tempo_F - 20 >= tempo_S:
-                    print('time out')
                     oci = True
-                    cinco = head(5,0,0,0)
+                    cinco = head_(5,0, 0, pay0)
+                    cinco = head_(5,0,0,pay0)
                     cinco = cinco + eop
                     com1.sendData(np.asarray(cinco))
                     
@@ -111,6 +113,29 @@ def main():
             while cont <= numPckg:
                 confi = False
                 timer_S1 = time.time()
+                while confi==False:
+                    head, nRx = com1.getData(10)
+                    pay, nRx = com1.getData(head[5])
+                    eop, nRx = com1.getData(4)
+                    if len(pay)==head[5]:
+                        confi = True
+                        packs[cont - 1]= payload
+                        ult_succeso=cont
+                        quatro = head(4,numPckg, cont, pay0)
+                        msg4 =quatro+eop
+
+                        com1.sendData(np.asarray(msg4))
+                        time.sleep(0.05)
+
+                        cont+=1                        
+                    else:
+                        seis = head(6,numPckg, cont, pay0)
+                        msg6 =6+eop
+
+                        com1.sendData(np.asarray(msg6))
+                        time.sleep(0.05)                        
+
+                    
             
 
         
