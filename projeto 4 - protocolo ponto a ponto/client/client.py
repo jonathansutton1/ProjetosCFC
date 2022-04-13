@@ -10,106 +10,65 @@
 #para acompanhar a execução e identificar erros, construa prints ao longo do código! 
 
 
-from threading import Timer
+
 from enlace import *
 import time
 import numpy as np
-import random
-# voce deverá descomentar e configurar a porta com através da qual ira fazer comunicaçao
-#   para saber a sua porta, execute no terminal :
-#   python -m serial.tools.list_ports
-# se estiver usando windows, o gerenciador de dispositivos informa a porta
+import sys
+from random import randrange
 
 #use uma das 3 opcoes para atribuir à variável a porta usada
 #serialName = "/dev/ttyACM0"           # Ubuntu (variacao de)
 #serialName = "/dev/tty.usbmodem1411" # Mac    (variacao de)
-serialName = "COM3"                  # Windows(variacao de)
-
-img = "./img/simbolo.png"
-log = './log/log.txt'
-
-eop= b'\xff\xff\xff\xff'
-
-def calcula_tam(img):
-    if len(img)%114==0:
-        return len(img)//114
-    else:
-        return len(img)//114 + 1
-
-def head(tipo, num_pacotes, pacote_at, payload):
-    head=[0]*10
-    
-    tipo_bytes = (tipo).to_bytes(1,byteorder='big')
-    num_pacotes_bytes = (num_pacotes).to_bytes(1,byteorder='big')
-    pacote_atual_bytes = (pacote_at).to_bytes(1,byteorder='big')
-    tam_payload_bytes = (len(payload)).to_bytes(1,byteorder='big')
-    id_s = b'\x00'
-    
-    
-    head[0]= tipo_bytes
-    head[1]= id_s
-    head[2]=b'\x00'
-    head[3]=num_pacotes_bytes
-    head[4]=pacote_atual_bytes
-    if tipo == 1:
-        head[5]= b'\x00'
-    else:
-        head[5]= tam_payload_bytes
-    head[6]= b'\x00'
-    head[7]= b'\x00'
-    head[8]= b'\x00'
-    head[9]= b'\x00'
-    return head
+serialName = "COM8"                  # Windows(variacao de)
 
 
-def atualiza (pack, contador):
-    contador_bytes = (contador).to_bytes(1,byteorder='big')
-    pack[7]= contador_bytes
-    return pack
+def cria_payloads(sorteio):
 
-
-
-def pacote(img):
-    lista=[]
-    for i in img:
-        byte = (i).to_bytes(1, byteorder='big')
-        lista.append(byte)
+    comandos = []
+    num = 0
+    while num < sorteio:
+        comandos += [b"\xab", b"\xab", b"\xab", b"\xab", b"\xab", b"\xab", b"\xab", b"\xab"]
+        num += 1
         
-    payload = [0]*114
-    n_pacotes = calcula_tam(img)
+    numPack = len(comandos) // 114
+    ultimo = len(comandos) % 114
     
-    lista_pack = [0]*tam_payload
+    if ultimo > 0:
+        numPack += 1
     
-    for i in range(len(lista_pack)+1):
-        
-        if i == 0:
-            head1 = head(1, 0, n_pacotes, 0)
-            tam_payload = list()
-        elif i != n_pacotes:
-            head1 = head(3, i, n_pacotes, payload)
-            for i in range(len(payload)):
-                payload[i]=lista.pop(0)
-        else:
-            resto = img[(n_pacotes-1)*114:]
-            head1 = head(3, i, n_pacotes, resto)
-            payload = [0]*len(resto)
-            for i in range(len(payload)):
-                payload[i]=lista.pop(0)
+    lista_payloads = []
+    a = 0
+    z = 114
+    print(f"{numPack} pacotes")
+    for n in range(numPack):                
+        if ultimo > 0:
+            if n < numPack - 1:
+                lista_payloads.append(comandos[a:z])
+                a += 114
+                z += 114
+            elif n == numPack-1:
+                z -= 114
+                z +=  ultimo     
+                lista_payloads.append(comandos[a:z])
             
-            
-            
-    
-        pack = head1 + payload + eop
-        lista_pack[i]= pack
-        
-    return lista_pack
+            else:
+                lista_payloads.append(comandos[a:z])
+                a += 114
+    return lista_payloads, numPack
+  
+
+def send(pack, com1):
+    com1.sendData(np.asarray(pack))
+    time.sleep(.05)
+
 
 dic_tipo = {'um':'env', 'dois':'rec'}
 def log(num, head):
     type = dic_tipo[num]
     current_time = time.ctime()
-    tipo = str(int.from_bytes(head[0], byteorder='big'))
-    tamanho =str(int.from_bytes(head[5], byteorder='big')+14)
+    tipo = str(head[0])
+    tamanho =str((head[5])+14)
     log = f'{current_time} / {type} / {tipo} / {tamanho}'
 
     if tipo == '3':
@@ -117,171 +76,158 @@ def log(num, head):
         num_pacotes = str(int.from_bytes(head[3],byteorder='big'))
         log = f"{current_time} / {type} / {tipo} / {tamanho} / {pacote_enviado} / {num_pacotes} / CRC"
 
-    with open(log, "a") as file:
+    with open('client1.txt', "a") as file:
             file.write(log)
             file.write('\n')
 
+
 def main():
     try:
-        #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
-        #para declarar esse objeto é o nome da porta.
-        com1 = enlace('COM4')        
-        
-        with open(img, "rb") as image:
-            txBuffer = image.read()
 
-        # Ativa comunicacao. Inicia os threads e a comunicação seiral 
+        # sorteio número de pacotes a serem enviados
+        sorteio = randrange(70, 150)
+        print(f"sorteio = {sorteio}")
+
+        lista_payloads, numPack = cria_payloads(sorteio)
+
+
+        com1 = enlace(serialName)
         com1.enable()
-        with open("./log.txt", "w") as file:
-            file.write("Comunicação aberta")
-            file.write('\n')
-        print ('Comunicação aberta')
-        
-        
-        pack = pacote(txBuffer)
-        num_pacotes = pack[0][3]
-        inicia = False
-        termina = False
-        tempo_S = time.time()
 
-        while inicia:
-            print('hand shake')
-            hs = pack[0]
-            print(hs)
-            
-            com1.sendData(np.asarray(txBuffer))
+          
+        time.sleep(.2)
+        com1.sendData(b'00')
+        time.sleep(1)
+          
+        
+        inicia = False 
+        cont = 0
+        eop = [b'\xff', b'\xff', b'\xff', b'\xff']
+        
+        # handshake
+        while inicia is False:
+
+            payload = [b'\xCC']
+            head = [b'\x01', b'\x00', b'\x00', (numPack).to_bytes(1,byteorder="big"), b'\x01', b'\x14', b'\x00', b'\x00', b'\x00', b'\x00']
+            pack = head + payload + eop
+            send(pack, com1)
+
+            print("handshake enviado")
 
             time.sleep(5)
-            
-            rx, nRx=com1.getData(10)
-            time.sleep(0.05)
-            eop, nRx = com1.getData(4)
-            if rx[0]==2:
-                cont = 1
-                inicia = True
-            else:
-                print("ERRO")
-                tempo_F = time.time()
-                if Tempo_F - 20 >= tempo_S:
-                    print('time out')
-                    cinco = head(5,0,0,0)
-                    cinco = cinco + eop
-                    com1.sendData(np.asarray(cinco))
-                    termina=True
-            if termina==True:
-                break
-        if encerrar==False:                
-                
-            while cont <= num_pacotes:
-                
-                txBuffer = pack[cont]
-                print(txBuffer)
 
-                com1.sendData(np.asarray(txBuffer))
-                tempo_F = time.time()
+            rxBuffer, nRx = com1.getData(10)
+
+
+
+            tipo = rxBuffer[0]
+
+            # recebiemnto confirm
+            if tipo == 2:
+
+                id = rxBuffer[5]
+                pac_confirmation = rxBuffer[7]
+
+                if id == 20 and pac_confirmation == 1:
+                    inicia = True
+                    cont = 1
             
-                rx , nRx = com1.getData(10)
+            #payload e eop
+            rxBuffer, nRx = com1.getData(1)
+            rxBuffer, nRx = com1.getData(4)
+            print(f"numPack = {numPack}")
+
+        while cont <= numPack:
+            #TIPO 3
+            payload = lista_payloads[cont-1]
+            head = [b'\x03', b'\x00', b'\x00', (numPack).to_bytes(1,byteorder="big"), (cont).to_bytes(1,byteorder="big"), (len(payload)).to_bytes(1,byteorder="big"), b'\x00',b'\x00', b'\x00', b'\x00']
+            pack = head + payload + eop
+            send(pack, com1)
+            print("tipo 3 enviado")
+
+            timer1_start = time.time()
+            timer2_start = time.time()
+
+            acabar = True
+
+            while acabar:
+                timer1 = time.time() - timer1_start
+                timer2 = time.time() - timer2_start
+
+                if timer1 > 5.0:
+                    send(pack, com1)
+                    print("tipo 3 reenviada")
+                    timer1_start = time.time()
                 
+                elif timer2 > 20.0:
+
+                    #TIPO 5
+                    payload = [b'\x0F']
+                    head = [b'\x05', b'\x00', b'\x00', (numPack).to_bytes(1,byteorder="big"), b'\x01', b'\x00', b'\x00',b'\x00', b'\x00', b'\x00'] 
+                    pack = head + payload + eop
+                    send(pack, com1)
+                    print("tipo 5 enviado")
+                    print("Time out")
+
+                    #Encerra comunicação
+                    print("-------------------------")
+                    print("Comunicação encerrada")
+                    print("-------------------------")
+                    com1.disable()
+                    sys.exit()
+
                 
-                if rx[0] == 4:
-                    cont +=1
-                else:
-                    if Tempo_F -5 >= tempo_S:
-                        
+                elif com1.rx.getBufferLen() > 0:
+
+                    rxBuffer, nRx = com1.getData(10)
+                    tipo = rxBuffer[0]
+
+                    #Tipo 6
+                    if tipo == 6:
+                        print("Tipo 6 recebido")
+                        lastPack = rxBuffer[6]
+                        cont = lastPack
+
+                        #Reenvia Tipo 3
+                        payload = lista_payloads[cont-1]
+                        head = [b'\x03', b'\x00', b'\x00', (numPack).to_bytes(1,byteorder="big"), (cont).to_bytes(1,byteorder="big"), (len(payload)).to_bytes(1,byteorder="big"), b'\x00',b'\x00', b'\x00', b'\x00']
+                        pack = head + payload + eop
+                        send(pack, com1)
+                        print("mensagem 3 reenviada")
+
+                        #payload e eop
+                        rxBuffer, nRx = com1.getData(1)
+                        rxBuffer, nRx = com1.getData(4)
+
+                        timer1_start = time.time()
+                        timer2_start = time.time()
                     
-            
+                    #Tipo 4
+                    elif tipo == 4:
+                        print("tipo 4 recebida")
+                        cont += 1
 
+                        rxBuffer, nRx = com1.getData(1)
+                        rxBuffer, nRx = com1.getData(4)
 
+                        acabar = False
 
 
+        print("sucesso :)")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+        # Encerra comunicação
         print("-------------------------")
         print("Comunicação encerrada")
         print("-------------------------")
         com1.disable()
-        with open("C:/Users/thpro/Desktop/Camada Física/projetosCamada/p4Protocolo/client/log.txt", "a") as file:
-            file.write("Comunicação encerrada")
-
+        
     except Exception as erro:
         print("ops! :-\\")
         print(erro)
         com1.disable()
         
 
-   # so roda o main quando for executado do terminal ... se for chamado dentro de outro modulo nao roda
+    #so roda o main quando for executado do terminal ... se for chamado dentro de outro modulo nao roda
 if __name__ == "__main__":
     main()
