@@ -49,7 +49,7 @@ def escreve(num, head):
             num_pacotes = str(int.from_bytes(head[3], byteorder='big'))
         log = f"{current_time} / {type} / {tipo} / {tamanho} / {pacote_enviado} / {num_pacotes} / CRC"
 
-    with open('server1.txt', "a") as file:
+    with open('server_Log3.txt', "a") as file:
             file.write(log)
             file.write('\n')
 def main():
