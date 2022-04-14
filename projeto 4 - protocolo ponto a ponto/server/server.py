@@ -31,19 +31,25 @@ def send(pack, com1):
     time.sleep(.05)
     
 dic_tipo = {'um':'env', 'dois':'rec'}
-def log(num, head):
+def escreve(num, head):
     type = dic_tipo[num]
     current_time = time.ctime()
-    tipo = str(int.from_bytes(head[0], byteorder='big'))
-    tamanho =str(int.from_bytes(head[5], byteorder='big')+14)
+    tipo = str(head[0])
+    tamanho =str(head[5])
+    if type == 'env':
+        tipo = str(int.from_bytes(head[0], byteorder='big'))
+        tamanho = str(int.from_bytes(head[5], byteorder='big'))
     log = f'{current_time} / {type} / {tipo} / {tamanho}'
 
     if tipo == '3':
-        pacote_enviado = str(int.from_bytes(head[4],byteorder='big'))
-        num_pacotes = str(int.from_bytes(head[3],byteorder='big'))
+        pacote_enviado = str(head[4])
+        num_pacotes = str(head[3])
+        if type == 'env':
+            pacote_enviado = str(int.from_bytes(head[4], byteorder='big'))
+            num_pacotes = str(int.from_bytes(head[3], byteorder='big'))
         log = f"{current_time} / {type} / {tipo} / {tamanho} / {pacote_enviado} / {num_pacotes} / CRC"
 
-    with open(log, "a") as file:
+    with open('server1.txt', "a") as file:
             file.write(log)
             file.write('\n')
 def main():
@@ -69,6 +75,8 @@ def main():
 
         while oci is True:
             rxBuffer, nRx= com1.getData(10)
+            print(rxBuffer[5])
+            escreve('dois', rxBuffer)
             num_Pacotes = rxBuffer[3]
             id = rxBuffer[5]
             print(f"id = {id}")
@@ -88,6 +96,7 @@ def main():
         head = [b'\x02', b'\x00', b'\x00', b'\x01', b'\x01', b'\x14', b'\x00', b'\x01', b'\x00', b'\x00']
         pack = head + payload + eop
         send(pack, com1)
+        escreve('um', head)
         cont = 1
         print("handshake enviado")        
 
@@ -101,6 +110,7 @@ def main():
 
                 if com1.rx.getBufferLen() > 0:
                     rxBuffer, nRx= com1.getData(10)
+                    escreve('dois', rxBuffer)
                     tipo = rxBuffer[0]
                     pack_recebido = rxBuffer[4]
                     lenPayload = rxBuffer[5]
@@ -113,6 +123,7 @@ def main():
                             head = [b'\x04', b'\x00', b'\x00', b'\x01', b'\x01', b'\x01', b'\x00',(cont).to_bytes(1, byteorder='big'), b'\x00', b'\x00'] 
                             pack = head + payload + eop
                             send(pack, com1)
+                            escreve('dois', head)
                             cont += 1
                             print("tipo 4")
 
@@ -128,6 +139,7 @@ def main():
                             head = [b'\x06', b'\x00', b'\x00', b'\x01', b'\x01', b'\x01', (cont).to_bytes(1, byteorder='big'),(cont-1).to_bytes(1, byteorder='big'), b'\x00', b'\x00'] 
                             pack = head + payload + eop
                             send(pack,com1)
+                            escreve('um', head)
                             print("tipo 6")
 
                             #payload e eop
@@ -146,7 +158,7 @@ def main():
                         head = [b'\x05', b'\x00', b'\x00', b'\x01', b'\x01', b'\x01', b'\x00',(cont).to_bytes(1, byteorder='big'), b'\x00', b'\x00'] 
                         pack = head + payload + eop
                         send(pack, com1) 
-
+                        escreve('um', head)
                         print("tipo 5 (time out)")
                         # Encerra comunicação
                         print("-------------------------")
@@ -160,7 +172,8 @@ def main():
                         # tipo 4
                         head = [b'\x04', b'\x00', b'\x00', b'\x01', b'\x01', b'\x01', b'\x00',(cont).to_bytes(1, byteorder='big'), b'\x00', b'\x00'] 
                         pack = head + payload + eop
-                        send(pack, com1) 
+                        send(pack, com1)
+                        escreve('um', head)
                         print("tipo 4 reenviada")
                         timer1_start = time.time()
 
