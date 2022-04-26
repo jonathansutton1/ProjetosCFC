@@ -17,6 +17,8 @@ import numpy as np
 import sys
 from random import randrange
 
+from crccheck.crc import Crc16, CrcXmodem
+from crccheck.checksum import Checksum16
 #use uma das 3 opcoes para atribuir à variável a porta usada
 #serialName = "/dev/ttyACM0"           # Ubuntu (variacao de)
 #serialName = "/dev/tty.usbmodem1411" # Mac    (variacao de)
@@ -86,7 +88,6 @@ def escreve(num, head):
             file.write(log)
             file.write('\n')
 
-
 def main():
     try:
 
@@ -151,6 +152,13 @@ def main():
             payload = lista_payloads[cont-1]
             head = [b'\x03', b'\x00', b'\x00', (numPack).to_bytes(1,byteorder="big"), (cont).to_bytes(1,byteorder="big"), (len(payload)).to_bytes(1,byteorder="big"), b'\x00',b'\x00', b'\x00', b'\x00']
             pack = head + payload + eop
+            crc = Crc16.calc(payload)
+            checksum = Checksum16.calc(payload)
+            data1 = b"Binary string"  # or use .encode(..) on normal sring - Python 3 only
+            crcinst = CrcXmodem()
+            crcinst.process(payload)
+            crcbytes = crcinst.finalbytes()
+            print(f'CRC: {crcbytes}')
             send(pack, com1)
             escreve('um', head)
             print("tipo 3 enviado")
