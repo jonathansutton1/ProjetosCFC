@@ -150,21 +150,19 @@ def main():
         while cont <= numPack:
             #TIPO 3
             payload = lista_payloads[cont-1]
-            
             pay = bytes()
             for a in payload:
-                pay += a
+                pay +=a
+                
             print(pay)
             use_table = True
             crc_calculator = CrcCalculator(Crc16.CCITT, use_table)
             checksum = crc_calculator.calculate_checksum(pay)
-            print(checksum)
-            
-            head = [b'\x03', b'\x00', b'\x00', (numPack).to_bytes(1,byteorder="big"), (cont).to_bytes(1,byteorder="big"), (len(payload)).to_bytes(1,byteorder="big"), b'\x00',b'\x00', checksum.to_bytes(2, byteorder='big')]
+            head = [b'\x03', b'\x00', b'\x00', (numPack).to_bytes(1,byteorder="big"), (cont).to_bytes(1,byteorder="big"), (len(payload)).to_bytes(1,byteorder="big"), b'\x00',b'\x00', checksum.to_bytes(2,byteorder="big")]
             pack = head + payload + eop
-            print(pack)
             print('CHECK BYTES', head[8])
-
+            print(f'CRC: {checksum}')
+            print(head)
             send(pack, com1)
             escreve('um', head)
             print("tipo 3 enviado")
