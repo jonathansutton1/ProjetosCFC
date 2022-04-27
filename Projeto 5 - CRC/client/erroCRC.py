@@ -158,6 +158,9 @@ def main():
             use_table = True
             crc_calculator = CrcCalculator(Crc16.CCITT, use_table)
             checksum = crc_calculator.calculate_checksum(pay)
+            if checksum != pay:
+                print("Deu erro")
+
             print(f'CRC:checksum')
             
             head = [b'\x03', b'\x00', b'\x00', (numPack).to_bytes(1,byteorder="big"), (cont).to_bytes(1,byteorder="big"), (len(payload)).to_bytes(1,byteorder="big"), b'\x00',b'\x00', checksum.to_bytes(2, byteorder='big')]
