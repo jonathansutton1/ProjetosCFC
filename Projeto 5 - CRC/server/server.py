@@ -122,14 +122,17 @@ def main():
                         if pack_recebido == cont:
 
                             #Tipo 4
-                            '''pay = bytes()
+                            pay = bytes()
                             for a in payload:
                                 pay+=a
+                            
+                                
+                            print(pay)
                             use_table = True
                             crc_calculator = CrcCalculator(Crc16.CCITT, use_table)
-                            checksum = crc_calculator.calculate_checksum(pay)'''                            
-                            
-                            head = [b'\x04', b'\x00', b'\x00', b'\x01', b'\x01', b'\x01', b'\x00',(cont).to_bytes(1, byteorder='big'), b'\x00', b'\x00'] 
+                            checksum = crc_calculator.calculate_checksum(pay)                            
+                            print(checksum)
+                            head = [b'\x04', b'\x00', b'\x00', b'\x01', b'\x01', b'\x01', b'\x00',(cont).to_bytes(1, byteorder='big'), checksum.to_bytes(2, byteorder='big')] 
                             pack = head + payload + eop
                             send(pack, com1)
                             escreve('dois', head)
@@ -162,7 +165,7 @@ def main():
                     timer2 = time.time() - timer2_start
                     timer1 = time.time() - timer1_start
 
-                    if timer2 > 20:
+                    if timer2 > 200:
                         oci = True
                         # tipo 5
                         head = [b'\x05', b'\x00', b'\x00', b'\x01', b'\x01', b'\x01', b'\x00',(cont).to_bytes(1, byteorder='big'), b'\x00', b'\x00'] 
