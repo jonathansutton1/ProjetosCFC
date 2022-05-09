@@ -154,16 +154,18 @@ def main():
             pay = bytes()
             for a in payload:
                 pay += a
-
-            
+            print(pay)
             use_table = True
             crc_calculator = CrcCalculator(Crc16.CCITT, use_table)
             checksum = crc_calculator.calculate_checksum(pay)
+            if checksum != pay:
+                print("Deu erro")
+
             print(f'CRC:checksum')
             
             head = [b'\x03', b'\x00', b'\x00', (numPack).to_bytes(1,byteorder="big"), (cont).to_bytes(1,byteorder="big"), (len(payload)).to_bytes(1,byteorder="big"), b'\x00',b'\x00', checksum.to_bytes(2, byteorder='big')]
             pack = head + payload + eop
-            print(pay)
+            print(pack)
             print('CHECK BYTES', head[8])
 
             send(pack, com1)
@@ -179,13 +181,13 @@ def main():
                 timer1 = time.time() - timer1_start
                 timer2 = time.time() - timer2_start
 
-                if timer1 > 15.0:
+                if timer1 > 5.0:
                     send(pack, com1)
                     escreve('um', head)
                     print("tipo 3 reenviada")
                     timer1_start = time.time()
                 
-                elif timer2 > 200.0:
+                elif timer2 > 20.0:
 
                     #TIPO 5
                     payload = [b'\x0F']

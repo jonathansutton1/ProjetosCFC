@@ -13,7 +13,9 @@ void loop() {
   funca();
   digitalWrite(2,LOW);
   funca();
-  digitalWrite(2,HIGH);
+  digitalWrite(2,LOW);
+  funca();
+  digitalWrite(2,LOW);
   funca();
   digitalWrite(2,LOW);
   funca();
@@ -23,12 +25,9 @@ void loop() {
   funca();
   digitalWrite(2,HIGH);
   funca();
-  digitalWrite(2,LOW);
-  funca();
-  digitalWrite(2,LOW); // paridade
+  digitalWrite(2,HIGH); // paridade
   funca();
   digitalWrite(2,HIGH); //stop
-  delay(2000);
 }
 
 void funca(){
