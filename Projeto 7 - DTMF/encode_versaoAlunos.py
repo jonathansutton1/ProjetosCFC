@@ -1,4 +1,3 @@
-
 #importe as bibliotecas
 from suaBibSignal import *
 import numpy as np
@@ -21,7 +20,7 @@ def todB(s):
 def main():
     
    
-    #********************************************instruções*********************************************** 
+    #***************instruções**************** 
     # seu objetivo aqui é gerar duas senoides. Cada uma com frequencia corresposndente à tecla pressionada
     # então inicialmente peça ao usuário para digitar uma tecla do teclado numérico DTMF
     # agora, voce tem que gerar, por alguns segundos, suficiente para a outra aplicação gravar o audio, duas senoides com as frequencias corresposndentes à tecla pressionada, segundo a tabela DTMF
@@ -39,7 +38,7 @@ def main():
     print("Inicializando encoder")
     
     dic_freq = {1:[1206,697], 2:[1339,697], 3:[1477,697], 4:[1206,770],5:[1339,770], 6:[1477,770], 7:[1206,852], 8:[1339,852], 9:[1477,852]}
-    NUM = int(input("Digite um Numero entre 1 e 9"))
+    NUM = int(input("Digite um Numero entre 1 e 9: "))
 
     print("Aguardando usuário")
 
@@ -49,13 +48,11 @@ def main():
     print(freq1)
     print(freq2)
 
-    x, v = signalMeu.generateSin(signalMeu, freq1,1,5,44100)
-    x, v2 = signalMeu.generateSin(signalMeu, freq2,1,5,44100)
+    x, v = signalMeu.generateSin(signalMeu, freq1,1,3,44100)
+    x, v2 = signalMeu.generateSin(signalMeu, freq2,1,3,44100)
 
     sinal = (v+v2)/max(abs(v+v2))
-    plt.plot(x,sinal)
-    plt.xlim(0,500/44100)
-    plt.show()
+
 
 
     print("Executando as senoides (emitindo o som)")
@@ -64,10 +61,13 @@ def main():
     print("Gerando Tom referente ao símbolo : {}".format(NUM))
     sd.play(sinal, 44100)
     # Exibe gráficos
-
+    plt.plot(x,sinal)
+    plt.xlim(0,500/44100)
+    plt.show()
     # aguarda fim do audio
     sd.wait()
-    plotFFT(self, signal, fs)
+    signalMeu.plotFFT(signalMeu, sinal, 44100)
+    plt.show()
     
 
 if __name__ == "__main__":
